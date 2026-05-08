@@ -60,7 +60,7 @@ for col in cols_texto:
 
 # ==== Configuración de la aplicación Streamlit ====
 st.header('🚗 Análisis de Anuncios de Vehículos')
-st.subheader('by Crisóstomo Melgarejo')
+st.subheader('by Crisostomo Melgarejo')
 
 # Mostrar DataFrame limpio
 st.subheader('Datos Limpios')
