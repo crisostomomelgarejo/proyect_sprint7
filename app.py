@@ -1,5 +1,5 @@
 # ===============================================
-#   Proyecto Sprint 7 - Aplicación Streamlit
+#   Proyecto  Aplicación Streamlit
 #   Autor: Crisóstomo Melgarejo
 #   Descripción: Análisis interactivo de anuncios de vehículos
 # ===============================================
@@ -41,8 +41,25 @@ df_clean['paint_color'] = df_clean['paint_color'].fillna('unknown')
 df_clean['is_4wd'] = df_clean['is_4wd'].fillna(0).astype(int)
 
 
+# Normalizar columna 'condition' a minúsculas
+if 'condition' in df_clean.columns:
+    df_clean['condition'] = (df_clean['condition'].astype(str)
+                             .str.lower().str.strip()
+                             .replace({'nan': 'unknown'}))
+else:
+    df_clean['condition'] = 'unknown'
+
+# Limpiar todas las columnas de texto: eliminar espacios vacios de los extremos,
+# capitalizar cada palabra y cambiar espacios por '_'
+cols_texto = df_clean.select_dtypes(include=['object', 'category']).columns
+for col in cols_texto:
+    if col != 'date_posted':
+        df_clean[col] = df_clean[col].astype(str).str.strip().str.title().str.replace(' ', '_')
+
+
+
 # ==== Configuración de la aplicación Streamlit ====
-st.header('🚗 Análisis de Anuncios de Vehículos (Sprint 7)')
+st.header('🚗 Análisis de Anuncios de Vehículos')
 st.subheader('by Crisóstomo Melgarejo')
 
 # Mostrar DataFrame limpio
@@ -91,30 +108,71 @@ if st.button('Mostrar gráfico de dispersión'):
                 x=df_clean['model_year'],
                 y=df_clean['price'],
                 mode='markers',
+                customdata=df_clean[['brand', 'model_name']].values,
                 marker=dict(
-                    size=6,
-                    opacity=0.6,
-                    color=df_clean['model_year'],
-                    colorscale='Viridis',
+                    size=8,
+                    opacity=0.7,
+                    color=df_clean['odometer'],
+                    colorscale='Sunset',
+                    line=dict(width=0.5, color='white'),
                     showscale=True,
                     colorbar=dict(
-                        title='Año del Modelo',  # Título de la escala de color
-                        titleside='right'
+                        title=dict(
+                            text='<b>Millaje (Millas)</b>',
+                            font=dict(size=12, color='#555555')
+                        ),
+                        thickness=12,
+                        len=0.75,
+                        outlinewidth=0,
+                        tickfont=dict(color='#7F8C8D'),
+                        tickformat=',.0f'
                     )
+                ),
+                hovertemplate=(
+                    '<b>Marca:</b> %{customdata[0]}<br>'
+                    '<b>Modelo:</b> %{customdata[1]}<br>'
+                    '<b>Odómetro:</b> %{marker.color:,.0f} millas<br>'
+                    '<b>Año:</b> %{x}<br>'
+                    '<b>Precio:</b> $%{y:,.0f}<br>'
+                    '<extra></extra>'
                 )
             )
         ]
     )
 
-    # Configurar diseño del gráfico
     fig_scatter.update_layout(
-        title='Precio vs. Año del Modelo',
-        xaxis_title='Año del Modelo',
-        yaxis_title='Precio (USD)',
-        plot_bgcolor='rgba(0,0,0,0)',
-        title_x=0.5  # Centrar título
+        title=dict(
+            text='Relación entre <b>Precio</b>, <b>Año</b> y <b>Millaje</b>',
+            font=dict(size=22, color='#2C3E50', family='Arial, sans-serif'),
+            x=0.05,
+            y=0.95
+        ),
+        xaxis=dict(
+            title='Año de Fabricación',
+            showgrid=True,
+            gridcolor='#F0F4F8',
+            linecolor='#D5DDE5',
+            zeroline=False,
+            tickfont=dict(color='#7F8C8D')
+        ),
+        yaxis=dict(
+            title='Precio (USD)',
+            showgrid=True,
+            gridcolor='#F0F4F8',
+            linecolor='#D5DDE5',
+            zeroline=False,
+            tickformat='$,.0f',
+            tickfont=dict(color='#7F8C8D')
+        ),
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        margin=dict(l=60, r=40, t=80, b=60),
+        hoverlabel=dict(
+            bgcolor='white',
+            font_size=14,
+            font_family='Arial, sans-serif'
+        )
     )
-
     # Mostrar gráfico en Streamlit
     st.plotly_chart(fig_scatter, use_container_width=True)
 
@@ -122,15 +180,14 @@ if st.button('Mostrar gráfico de dispersión'):
 # ==== Gráfico de Barras Apiladas: Tipos de Vehículos por Modelo ====
 st.subheader('Gráfico de Barras Apiladas de Tipos de Vehículos por Modelo')
 if st.button('Mostrar gráficos por fabricante'):
-    fig_bar = px.bar(
+    fig_bar = px.histogram(
         df_clean,
         x='model',
         color='type',
         title='Tipos de Vehículos por Modelo',
         labels={
             'model': 'Modelo',
-            'type': 'Tipo',
-            'count': 'Unidades'
+            'type': 'Tipo'
         }
     )
 
@@ -138,7 +195,8 @@ if st.button('Mostrar gráficos por fabricante'):
     fig_bar.update_layout(
         barmode='stack',
         xaxis={'categoryorder': 'total descending'},
-        title_x=0.5
+        title_x=0.5,
+        yaxis_title="Unidades"
     )
 
     st.plotly_chart(fig_bar, use_container_width=True)
